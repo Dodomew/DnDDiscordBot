@@ -2,7 +2,6 @@
 
 require('dotenv').config();
 
-// Import the discord.js module
 const fs = require('fs');
 const Discord = require('discord.js');
 const cooldowns = new Discord.Collection();
@@ -47,6 +46,7 @@ client.on('message', message => {
     const timestamps = cooldowns.get(command.name);
     const cooldownAmount = (command.cooldown || 3) * 1000;
 
+    // if author already has used this command before in the past coolDownAmount seconds, return reply message
     if (timestamps.has(message.author.id)) {
         const expirationTime = timestamps.get(message.author.id) + cooldownAmount;
 
@@ -56,6 +56,7 @@ client.on('message', message => {
         }
     }
 
+    // Add command to timestamp list and delete it after cooldownAmount again to free up the space
     timestamps.set(message.author.id, now);
     setTimeout(() => timestamps.delete(message.author.id), cooldownAmount);
 
@@ -67,5 +68,4 @@ client.on('message', message => {
     }
 });
 
-// Log our bot in using the token from https://discord.com/developers/applications
 client.login(process.env.BOT_TOKEN);

@@ -1,4 +1,3 @@
-import { MessageEmbed } from "discord.js";
 import apiGET from "../api/apiGET";
 
 interface MonsterProps {
@@ -61,8 +60,6 @@ interface MonsterSpecialAbilitiesProps extends MonsterBaseAbilitiesProps { }
 
 interface MonsterReactionProps extends MonsterBaseAbilitiesProps { }
 
-const trim = (str, max) => ((str.length > max) ? `${str.slice(0, max - 3)}...` : str);
-
 module.exports = {
     name: 'monster',
     description: 'Get a monster',
@@ -73,21 +70,40 @@ module.exports = {
 
         const monsterName = args[0];
 
+        const botMessage = await message.channel.send("fetching...");
+
         apiGET(`https://api.open5e.com/monsters/${monsterName}`).then((monster: MonsterProps) => {
             if (monster) {
-                const embed = new MessageEmbed()
-                    .setColor('#EFFF00')
-                    .setTitle(monster.name)
-                    .addFields(
-                        { name: 'Size', value: monster.size },
-                        { name: 'Type', value: monster.type },
-                        { name: 'Alignment', value: monster.alignment },
-                    );
+                const monsterFields = [];
 
-                message.channel.send(embed);
+                for (const [key, value] of Object.entries(monster)) {
+                    if (!value) {
+                        continue;
+                    }
+
+                    if (Array.isArray(value) && value.length === 0) {
+                        continue;
+                    }
+
+                    const monsterField = {
+                        name: key,
+                        value: value
+                    }
+                    monsterFields.push(monsterField);
+                }
+
+                // console.log(monsterFields);
+
+                const embed = {
+                    color: 0x0099ff,
+                    title: monster.name,
+                    fields: monsterFields
+                }
+
+                botMessage.edit("Found your monster!", { embed: embed });
             }
             else {
-                message.channel.send(`Unable to find monster: ${monsterName}`)
+                botMessage.edit(`Unable to find monster: ${monsterName}`)
             }
         });
     }
