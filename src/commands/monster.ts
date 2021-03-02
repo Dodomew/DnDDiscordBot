@@ -1,3 +1,4 @@
+const Discord = require('discord.js');
 import apiGET from "../api/apiGET";
 
 interface MonsterProps {
@@ -10,7 +11,8 @@ interface MonsterProps {
     hit_points: number,
     hit_dice: string,
     speed: {
-        walk: number
+        walk: number,
+        swim?: number
     },
     strength: number,
     dexterity: number,
@@ -60,6 +62,11 @@ interface MonsterSpecialAbilitiesProps extends MonsterBaseAbilitiesProps { }
 
 interface MonsterReactionProps extends MonsterBaseAbilitiesProps { }
 
+const getAbilityModifier = (abilityScore: number) => {
+    const modifier = Math.floor((abilityScore - 10) / 2);
+    return modifier >= 0 ? `+${modifier}` : `${modifier}`;
+}
+
 module.exports = {
     name: 'monster',
     description: 'Get a monster',
@@ -74,30 +81,63 @@ module.exports = {
 
         apiGET(`https://api.open5e.com/monsters/${monsterName}`).then((monster: MonsterProps) => {
             if (monster) {
-                const monsterFields = [];
+                // const monsterFields = [];
 
-                for (const [key, value] of Object.entries(monster)) {
-                    if (!value) {
-                        continue;
-                    }
+                // for (const [key, value] of Object.entries(monster)) {
+                //     if (!value) {
+                //         continue;
+                //     }
 
-                    if (Array.isArray(value) && value.length === 0) {
-                        continue;
-                    }
+                //     if (Array.isArray(value) && value.length === 0) {
+                //         continue;
+                //     }
 
-                    const monsterField = {
-                        name: key,
-                        value: value
-                    }
-                    monsterFields.push(monsterField);
-                }
+                //     const monsterField = {
+                //         name: key,
+                //         value: value
+                //     }
+                //     monsterFields.push(monsterField);
+                // }
 
-                // console.log(monsterFields);
+                const monsterHeader = [
+                    { name: 'Name', value: monster.name },
+                    { name: 'Size', value: monster.size, inline: true },
+                    { name: 'Type', value: monster.type, inline: true },
+                    { name: 'Alignment', value: monster.alignment, inline: true }
+                ];
+
+                const monsterDefences = [
+                    { name: 'Armor Class', value: monster.armor_class },
+                    { name: 'Hit Points', value: `${monster.hit_points} (${monster.hit_dice})` },
+                    { name: 'Speed', value: `${monster.speed.walk}ft ${monster.speed.swim ? `, swim ${monster.speed.swim}ft` : ''}` }
+                ];
+
+                const monsterAbilityScores = [
+                    { name: 'Str', value: `${monster.strength} (${getAbilityModifier(monster.strength)})`, inline: true },
+                    { name: 'Dex', value: `${monster.dexterity} (${getAbilityModifier(monster.dexterity)})`, inline: true },
+                    { name: 'Con', value: `${monster.constitution} (${getAbilityModifier(monster.constitution)})`, inline: true },
+                    { name: 'Int', value: `${monster.intelligence} (${getAbilityModifier(monster.intelligence)})`, inline: true },
+                    { name: 'Wis', value: `${monster.wisdom} (${getAbilityModifier(monster.wisdom)})`, inline: true },
+                    { name: 'Cha', value: `${monster.charisma} (${getAbilityModifier(monster.charisma)})`, inline: true }
+                ];
+
+                const monsterProficiencies = [];
+
+                const monsterTraits = [];
+
+                const monsterActions = [];
+
+                const monsterLegendaryActions = [];
+
+                const monsterReactions = [];
+
+                const monsterSpells = [];
+
+                const monsterFields = []
 
                 const embed = {
                     color: 0x0099ff,
-                    title: monster.name,
-                    fields: monsterFields
+                    fields: [...monsterHeader, ...monsterDefences, ...monsterAbilityScores]
                 }
 
                 botMessage.edit("Found your monster!", { embed: embed });
