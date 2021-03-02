@@ -67,6 +67,35 @@ const getAbilityModifier = (abilityScore: number) => {
     return modifier >= 0 ? `+${modifier}` : `${modifier}`;
 }
 
+const getAbilitySavingThrows = (monster: MonsterProps) => {
+    const abilityDictionary = new Map<string, number | null>();
+    abilityDictionary.set("strength_save", monster.strength_save);
+    abilityDictionary.set("dexterity_save", monster.dexterity_save);
+    abilityDictionary.set("constitution_save", monster.constitution_save);
+    abilityDictionary.set("intelligence_save", monster.intelligence_save);
+    abilityDictionary.set("wisdom_save", monster.wisdom_save);
+    abilityDictionary.set("charisma_save", monster.charisma_save);
+
+    const monsterAbilitySaves = [...abilityDictionary].filter(([key, value]) => {
+        return value !== null;
+    });
+
+    const flatMonsterAbilitySaves = monsterAbilitySaves.flat();
+
+    let savingThrowText = "";
+
+    for (let i = 0; i < flatMonsterAbilitySaves.length; i += 2) {
+        const save = flatMonsterAbilitySaves[i] as string;
+        const modifier = flatMonsterAbilitySaves[i + 1] as number;
+
+        if (save && modifier) {
+            const saveText = save.substr(0, 3);
+            savingThrowText = savingThrowText + saveText + " " + modifier + (i + 2 >= flatMonsterAbilitySaves.length ? "" : ", ");
+        }
+    }
+    return savingThrowText;
+}
+
 module.exports = {
     name: 'monster',
     description: 'Get a monster',
@@ -81,24 +110,6 @@ module.exports = {
 
         apiGET(`https://api.open5e.com/monsters/${monsterName}`).then((monster: MonsterProps) => {
             if (monster) {
-                // const monsterFields = [];
-
-                // for (const [key, value] of Object.entries(monster)) {
-                //     if (!value) {
-                //         continue;
-                //     }
-
-                //     if (Array.isArray(value) && value.length === 0) {
-                //         continue;
-                //     }
-
-                //     const monsterField = {
-                //         name: key,
-                //         value: value
-                //     }
-                //     monsterFields.push(monsterField);
-                // }
-
                 const monsterHeader = [
                     { name: 'Name', value: monster.name },
                     { name: 'Size', value: monster.size, inline: true },
@@ -121,7 +132,9 @@ module.exports = {
                     { name: 'Cha', value: `${monster.charisma} (${getAbilityModifier(monster.charisma)})`, inline: true }
                 ];
 
-                const monsterProficiencies = [];
+                const monsterProficiencies = [
+                    { name: 'Saving throws', value: getAbilitySavingThrows(monster) }
+                ]
 
                 const monsterTraits = [];
 
@@ -137,7 +150,12 @@ module.exports = {
 
                 const embed = {
                     color: 0x0099ff,
-                    fields: [...monsterHeader, ...monsterDefences, ...monsterAbilityScores]
+                    fields: [
+                        ...monsterHeader,
+                        ...monsterDefences,
+                        ...monsterAbilityScores,
+                        ...monsterProficiencies
+                    ]
                 }
 
                 botMessage.edit("Found your monster!", { embed: embed });
