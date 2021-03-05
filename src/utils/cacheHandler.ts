@@ -1,5 +1,9 @@
+interface CacheItem extends JSON {
+    cache_timestamp: number;
+};
+
 class CacheHandler {
-    cache: Map<string, any>;
+    cache: Map<string, CacheItem>;
     ttl: number;
 
     constructor() {
@@ -9,7 +13,6 @@ class CacheHandler {
     }
 
     get(key: string) {
-        console.log(`get ${key}`)
         return this.cache.get(key);
     }
 
@@ -18,13 +21,11 @@ class CacheHandler {
     }
 
     set(key: string, value) {
-        const valueWithTimeStamp = { ...value, "timestamp": Date.now() };
-        console.log(`setting ${key}`)
+        const valueWithTimeStamp = { ...value, "cache_timestamp": Date.now() };
         return this.cache.set(key, valueWithTimeStamp);
     }
 
     delete(key: string) {
-        console.log(`deleting ${key}`)
         return this.cache.delete(key);
     }
 
@@ -33,13 +34,10 @@ class CacheHandler {
     }
 
     isExpired(key: string) {
-        console.log("is expired?")
         const cacheItem = this.cache.get(key);
-        if ((Date.now() - cacheItem.timestamp) < this.ttl) {
-            console.log('false')
+        if ((Date.now() - cacheItem.cache_timestamp) < this.ttl) {
             return false;
         }
-        console.log('true')
         return true;
     }
 }

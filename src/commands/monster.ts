@@ -1,68 +1,8 @@
 import apiGET from "../api/apiGET";
+import { MonsterProps } from "../types/monsterTypes";
 const CacheHandler = require('../utils/cacheHandler');
 
 const monsterCache = new CacheHandler();
-
-interface MonsterProps {
-    name: string;
-    size: string;
-    type: string;
-    alignment: string;
-    armor_class: number,
-    armor_desc: string,
-    hit_points: number,
-    hit_dice: string,
-    speed: {
-        walk: number,
-        swim?: number
-    },
-    strength: number,
-    dexterity: number,
-    constitution: number,
-    intelligence: number,
-    wisdom: number,
-    charisma: number,
-    strength_save: null,
-    dexterity_save: null,
-    constitution_save: null,
-    intelligence_save: null,
-    wisdom_save: null,
-    charisma_save: null,
-    perception: null,
-    skills: {
-        athletics: number,
-        intimidation: number
-    },
-    damage_vulnerabilities: string,
-    damage_resistances: string,
-    damage_immunities: string,
-    condition_immunities: string,
-    senses: string,
-    languages: string,
-    challenge_rating: string,
-    actions: MonsterAttackProps[],
-    reactions: MonsterReactionProps[],
-    legendary_desc: string,
-    legendary_actions: MonsterSpecialAbilitiesProps[],
-    special_abilities: MonsterSpecialAbilitiesProps[],
-    spell_list: string[],
-    img_main: string,
-}
-
-interface MonsterBaseAbilitiesProps {
-    name: string,
-    desc: string,
-}
-
-interface MonsterAttackProps extends MonsterBaseAbilitiesProps {
-    attack_bonus: number,
-    damage_dice: string,
-    damage_bonus: number
-}
-
-interface MonsterSpecialAbilitiesProps extends MonsterBaseAbilitiesProps { }
-
-interface MonsterReactionProps extends MonsterBaseAbilitiesProps { }
 
 const BOT_MESSAGE_STATUS = {
     "SUCCESS": "success",
@@ -88,6 +28,10 @@ const getAbilitySavingThrows = (monster: MonsterProps) => {
         return value !== null;
     });
 
+    if (monsterAbilitySaves === null) {
+        return null;
+    }
+
     const flatMonsterAbilitySaves = monsterAbilitySaves.flat();
 
     let savingThrowText = "";
@@ -98,10 +42,18 @@ const getAbilitySavingThrows = (monster: MonsterProps) => {
 
         if (save && modifier) {
             const saveText = save.substr(0, 3);
-            savingThrowText = savingThrowText + saveText + " " + modifier + (i + 2 >= flatMonsterAbilitySaves.length ? "" : ", ");
+            savingThrowText = savingThrowText + saveText + ": " + modifier + "; ";
         }
     }
     return savingThrowText;
+}
+
+const monsterSkills = (monsterSkills: { [key: string]: number }) => {
+    let skills = "";
+    for (const property in monsterSkills) {
+        skills += property + ': ' + monsterSkills[property] + '; ';
+    }
+    return skills;
 }
 
 const monsterEmbedConstructor = (monster: MonsterProps) => {
@@ -128,8 +80,9 @@ const monsterEmbedConstructor = (monster: MonsterProps) => {
     ];
 
     const monsterProficiencies = [
-        { name: 'Saving throws', value: getAbilitySavingThrows(monster) }
-    ]
+        ...(getAbilitySavingThrows(monster) ? [{ name: 'Saving throws', value: getAbilitySavingThrows(monster) }] : []),
+        ...(monsterSkills(monster.skills) ? [{ name: 'Skills', value: monsterSkills(monster.skills) }] : []),
+    ];
 
     const monsterTraits = [];
 
@@ -148,12 +101,12 @@ const monsterEmbedConstructor = (monster: MonsterProps) => {
         ...monsterDefences,
         ...monsterAbilityScores,
         ...monsterProficiencies,
-        ...monsterTraits,
-        ...monsterActions,
-        ...monsterLegendaryActions,
-        ...monsterReactions,
-        ...monsterSpells,
-        ...monsterFields
+        // ...monsterTraits,
+        // ...monsterActions,
+        // ...monsterLegendaryActions,
+        // ...monsterReactions,
+        // ...monsterSpells,
+        // ...monsterFields
     ]
 
     const embed = {
@@ -219,7 +172,6 @@ module.exports = {
         }
 
         apiGET(`https://api.open5e.com/monsters/${monsterName}`).then((monster: MonsterProps) => {
-            console.log("apiGET done")
             if (monster) {
                 monsterCache.set(monsterName, monster);
                 const embed = monsterEmbedConstructor(monster);
