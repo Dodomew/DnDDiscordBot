@@ -64,6 +64,12 @@ interface MonsterSpecialAbilitiesProps extends MonsterBaseAbilitiesProps { }
 
 interface MonsterReactionProps extends MonsterBaseAbilitiesProps { }
 
+const BOT_MESSAGE_STATUS = {
+    "SUCCESS": "success",
+    "MONSTER_NOT_FOUND": "monster_not_found",
+    "API_ERROR": "api_error"
+};
+
 const getAbilityModifier = (abilityScore: number) => {
     const modifier = Math.floor((abilityScore - 10) / 2);
     return modifier >= 0 ? `+${modifier}` : `${modifier}`;
@@ -158,15 +164,29 @@ const monsterEmbedConstructor = (monster: MonsterProps) => {
     return embed;
 }
 
-const botMessageResponse = (botMessage, config) => {
-    if (config.embed) {
-        botMessage.edit("Found your monster!", { embed: config.embed });
-    }
-    else if (config.monsterName) {
-        botMessage.edit(`Unable to find monster: ${config.monsterName}`)
-    }
-    else {
-        botMessage.edit(`Unable to process command`);
+const botMessageResponse = (botMessage, state, config?) => {
+    switch (state) {
+        case BOT_MESSAGE_STATUS.SUCCESS:
+            if (config.embed) {
+                botMessage.edit("Found your monster!", { embed: config.embed });
+            }
+            else {
+                console.log("Found monster, but missing embed object");
+            }
+            break;
+        case BOT_MESSAGE_STATUS.MONSTER_NOT_FOUND:
+            if (config.monsterName) {
+                botMessage.edit(`Unable to find monster: ${config.monsterName}`)
+            }
+            break;
+        case BOT_MESSAGE_STATUS.API_ERROR:
+            if (config.error) {
+                botMessage.edit(`API request failed: ${config.error}`);
+            }
+            break;
+        default:
+            botMessage.edit(`Unable to process command`);
+            break;
     }
 }
 
@@ -184,10 +204,9 @@ module.exports = {
         if (monsterCache.has(monsterName)) {
             try {
                 if (!monsterCache.isExpired(monsterName)) {
-                    console.log("not expired, returning monster")
                     const monster = monsterCache.get(monsterName);
                     const embed = monsterEmbedConstructor(monster);
-                    botMessageResponse(botMessage, { embed: embed });
+                    botMessageResponse(botMessage, BOT_MESSAGE_STATUS.SUCCESS, { embed: embed });
                     return;
                 }
                 else {
@@ -204,14 +223,13 @@ module.exports = {
             if (monster) {
                 monsterCache.set(monsterName, monster);
                 const embed = monsterEmbedConstructor(monster);
-                botMessageResponse(botMessage, { embed: embed });
+                botMessageResponse(botMessage, BOT_MESSAGE_STATUS.SUCCESS, { embed: embed });
             }
             else {
-                botMessageResponse(botMessage, { monsterName: monsterName });
+                botMessageResponse(botMessage, BOT_MESSAGE_STATUS.MONSTER_NOT_FOUND, { monsterName: monsterName });
             }
         }).catch((error) => {
-            console.log(error)
-            botMessageResponse(botMessage, { monsterName: monsterName, error: error });
+            botMessageResponse(botMessage, BOT_MESSAGE_STATUS.API_ERROR, { error: error });
         });
     }
 };
