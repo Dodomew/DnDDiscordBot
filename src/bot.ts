@@ -6,7 +6,6 @@ const fs = require('fs');
 const Discord = require('discord.js');
 const cooldowns = new Discord.Collection();
 
-
 // Create an instance of a Discord client
 const client = new Discord.Client();
 client.commands = new Discord.Collection();
