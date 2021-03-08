@@ -56,41 +56,65 @@ const monsterSkills = (monsterSkills: { [key: string]: number }) => {
     return skills;
 }
 
+const monsterActionsConstructor = (abilities: Array<{ name: string, desc: string }>, title: string) => {
+    if (!abilities || !abilities.length) {
+        return [];
+    }
+
+    const action = [{
+        name: `\n ${title}`,
+        value: `\n ------------------------------`
+    }];
+
+    let amountOfExtraFields = 0;
+
+    for (let i = 0; i < abilities.length; i++) {
+        const element = abilities[i];
+
+        if (action[amountOfExtraFields].value.length + element.desc.length > 1024) {
+            amountOfExtraFields++;
+            action[amountOfExtraFields] = {
+                name: element.name,
+                value: `\n ${element.desc} \n`
+            }
+            continue;
+        }
+        action[amountOfExtraFields].value += `\n **${element.name}** \n ${element.desc} \n`;
+    }
+
+    return action;
+}
+
 const monsterEmbedConstructor = (monster: MonsterProps) => {
     const monsterHeader = [
         { name: 'Name', value: monster.name },
-        { name: 'Size', value: monster.size, inline: true },
-        { name: 'Type', value: monster.type, inline: true },
-        { name: 'Alignment', value: monster.alignment, inline: true }
+        { name: 'Description', value: `${monster.size} ${monster.type}, ${monster.alignment}` }
     ];
 
     const monsterDefences = [
-        { name: 'Armor Class', value: monster.armor_class },
-        { name: 'Hit Points', value: `${monster.hit_points} (${monster.hit_dice})` },
-        { name: 'Speed', value: `${monster.speed.walk}ft ${monster.speed.swim ? `, swim ${monster.speed.swim}ft` : ''}` }
+        { name: 'Defences', value: `${monster.armor_class} AC,\n ${monster.hit_points} HP (${monster.hit_dice})`, inline: true },
+        { name: 'Speed', value: `${monster.speed.walk}ft ${monster.speed.swim ? `, swim ${monster.speed.swim}ft` : ''}`, inline: true },
     ];
 
     const monsterAbilityScores = [
-        { name: 'Str', value: `${monster.strength} (${getAbilityModifier(monster.strength)})`, inline: true },
-        { name: 'Dex', value: `${monster.dexterity} (${getAbilityModifier(monster.dexterity)})`, inline: true },
-        { name: 'Con', value: `${monster.constitution} (${getAbilityModifier(monster.constitution)})`, inline: true },
-        { name: 'Int', value: `${monster.intelligence} (${getAbilityModifier(monster.intelligence)})`, inline: true },
-        { name: 'Wis', value: `${monster.wisdom} (${getAbilityModifier(monster.wisdom)})`, inline: true },
-        { name: 'Cha', value: `${monster.charisma} (${getAbilityModifier(monster.charisma)})`, inline: true }
+        {
+            name: 'Abilities', value:
+                `Str ${monster.strength} (${getAbilityModifier(monster.strength)}); ` +
+                `Dex ${monster.dexterity} (${getAbilityModifier(monster.dexterity)}); ` +
+                `Con ${monster.constitution} (${getAbilityModifier(monster.constitution)}); \n` +
+                `Int ${monster.intelligence} (${getAbilityModifier(monster.intelligence)}); ` +
+                `Wis ${monster.wisdom} (${getAbilityModifier(monster.wisdom)}); ` +
+                `Cha ${monster.charisma} (${getAbilityModifier(monster.charisma)})`
+        }
     ];
 
     const monsterProficiencies = [
         ...(getAbilitySavingThrows(monster) ? [{ name: 'Saving throws', value: getAbilitySavingThrows(monster) }] : []),
         ...(monsterSkills(monster.skills) ? [{ name: 'Skills', value: monsterSkills(monster.skills) }] : []),
+        ...(monster.senses) ? [{ name: 'Senses', value: monster.senses, inline: true }] : [],
+        ...(monster.languages) ? [{ name: 'Languages', value: monster.languages, inline: true }] : [],
+        { name: 'Challenge Rating', value: monster.challenge_rating, inline: true },
     ];
-
-    const monsterTraits = [];
-
-    const monsterActions = [];
-
-    const monsterLegendaryActions = [];
-
-    const monsterReactions = [];
 
     const monsterSpells = [];
 
@@ -101,13 +125,12 @@ const monsterEmbedConstructor = (monster: MonsterProps) => {
         ...monsterDefences,
         ...monsterAbilityScores,
         ...monsterProficiencies,
-        // ...monsterTraits,
-        // ...monsterActions,
-        // ...monsterLegendaryActions,
-        // ...monsterReactions,
+        ...monsterActionsConstructor(monster.special_abilities, "Traits"),
+        ...monsterActionsConstructor(monster.actions, "Actions"),
+        ...monsterActionsConstructor(monster.legendary_actions, "Legendary Actions"),
+        ...monsterActionsConstructor(monster.reactions, "Reactions"),
         // ...monsterSpells,
-        // ...monsterFields
-    ]
+    ];
 
     const embed = {
         color: 0x0099ff,
