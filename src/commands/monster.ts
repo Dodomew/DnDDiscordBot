@@ -42,7 +42,7 @@ const getAbilitySavingThrows = (monster: MonsterProps) => {
 
         if (save && modifier) {
             const saveText = save.substr(0, 3);
-            savingThrowText = savingThrowText + saveText + ": " + modifier + "; ";
+            savingThrowText = savingThrowText + saveText + ": +" + modifier + "; ";
         }
     }
     return savingThrowText;
@@ -51,7 +51,7 @@ const getAbilitySavingThrows = (monster: MonsterProps) => {
 const monsterSkills = (monsterSkills: { [key: string]: number }) => {
     let skills = "";
     for (const property in monsterSkills) {
-        skills += property + ': ' + monsterSkills[property] + '; ';
+        skills += property + ': +' + monsterSkills[property] + '; ';
     }
     return skills;
 }
@@ -86,6 +86,10 @@ const monsterActionsConstructor = (abilities: Array<{ name: string, desc: string
 }
 
 const monsterEmbedConstructor = (monster: MonsterProps) => {
+    if (!monster) {
+        return;
+    }
+
     const monsterHeader = [
         { name: 'Name', value: monster.name },
         { name: 'Description', value: `${monster.size} ${monster.type}, ${monster.alignment}` }
@@ -116,9 +120,33 @@ const monsterEmbedConstructor = (monster: MonsterProps) => {
         { name: 'Challenge Rating', value: monster.challenge_rating, inline: true },
     ];
 
-    const monsterSpells = [];
+    const monsterSpells = () => {
+        if (!monster.spell_list || !monster.spell_list.length) {
+            return [];
+        }
 
-    const monsterFields = [];
+        const spells = [
+            {
+                name: `\n Spells`,
+                value: `\n ------------------------------`
+            }
+        ]
+
+        for (let i = 0; i < monster.spell_list.length; i++) {
+            const spell = monster.spell_list[i];
+            const urlParameter = spell.lastIndexOf("/?format=json");
+            const spellLink = spell.substring(0, urlParameter);
+
+            const posA = spell.lastIndexOf("spells/");
+            const posB = spell.lastIndexOf("/");
+            const spellName = spell.substring(posA + 7, posB); // spells/ is 7 chars long so skip those
+            const sanitizedSpellName = spellName.replace(/-/g, " "); // cure-wounds => cure wounds
+            const spellNameCapitalized = sanitizedSpellName.charAt(0).toUpperCase() + sanitizedSpellName.slice(1); // cure wounds => Cure wounds
+
+            spells[0].value += `\n [${spellNameCapitalized}](${spellLink})`;
+        }
+        return spells;
+    }
 
     const monsterEmbedFields = [
         ...monsterHeader,
@@ -129,7 +157,7 @@ const monsterEmbedConstructor = (monster: MonsterProps) => {
         ...monsterActionsConstructor(monster.actions, "Actions"),
         ...monsterActionsConstructor(monster.legendary_actions, "Legendary Actions"),
         ...monsterActionsConstructor(monster.reactions, "Reactions"),
-        // ...monsterSpells,
+        ...monsterSpells(),
     ];
 
     const embed = {

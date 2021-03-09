@@ -8,8 +8,7 @@ class CacheHandler {
 
     constructor() {
         this.cache = new Map();
-        //14400000
-        this.ttl = 5000;
+        this.ttl = 14400000;
     }
 
     get(key: string) {
