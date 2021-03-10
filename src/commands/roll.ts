@@ -1,32 +1,32 @@
+interface DieExpression {
+    expression: string;
+    operator: string;
+}
+
 function getRandomInt(min, max) {
     min = Math.ceil(min);
     max = Math.floor(max);
     return Math.floor(Math.random() * (max - min) + min);
 }
 
-const parseDie = (dieExpression: string): number => {
-    console.log(dieExpression);
-    const dieValues = dieExpression.split(/\D/g);
+const parseDie = (dieExpression: DieExpression): number[] => {
+    const dieValues = dieExpression.expression.split(/\D/g);
     const prefix: number = parseInt(dieValues[0]);
     const postfix: number = parseInt(dieValues[1]);
-
-    let dieModifierText = "";
-    let totalRoll = 0;
+    const individualRolls: number[] = [];
 
     if (postfix) {
-
         for (let i = 0; i < prefix; i++) {
             const randomDiceRoll = getRandomInt(1, postfix);
-            console.log(randomDiceRoll)
-            totalRoll += randomDiceRoll;
+            individualRolls.push(randomDiceRoll);
         }
     }
     else {
         const intModifier = prefix;
-        totalRoll += intModifier;
+        individualRolls.push(intModifier);
     }
 
-    return totalRoll;
+    return individualRolls;
 }
 
 module.exports = {
@@ -37,29 +37,55 @@ module.exports = {
             return message.reply("You did not specify a die.")
         }
 
-        const botMessage = await message.channel.send("rolling...");
         const dieArgs: string = args.join("");
 
-        // if (isNaN(parseInt(dieArgs.charAt(0)))) {
-        //     return message.reply("You did not specify a correct amount of die to roll.")
-        // }
+        const expressions = dieArgs.match(/[+-]?\dd\d+|([+-][\d]+)/g);
 
-        const dieExpressions = dieArgs.split(/[+-]/g);
-        console.log(dieExpressions);
+        if (!expressions || dieArgs.indexOf("d") === -1) {
+            return message.reply("No valid dice found.")
+        }
+
+        const botMessage = await message.channel.send("rolling...");
+
+        const dieExpressions: DieExpression[] = [];
+        for (let i = 0; i < expressions.length; i++) {
+            const expression = expressions[i];
+            const operator = expression.charAt(0);
+
+            dieExpressions.push(
+                {
+                    expression: expression.replace(/[+-]/g, ""),
+                    operator: operator === "-" ? operator : "+"
+                }
+            )
+        }
 
         let totalRoll = 0;
-        let numbersRolled = [];
+        let numbersRolled: string[] = [];
 
         for (let i = 0; i < dieExpressions.length; i++) {
             const rolledDie = parseDie(dieExpressions[i]);
-            //todo: figure out if the rolledDie needs to be added, or subtracted!
-            totalRoll += rolledDie;
-            numbersRolled.push(rolledDie)
+            for (let j = 0; j < rolledDie.length; j++) {
+                const rolledAmount = rolledDie[j];
+
+                if (dieExpressions[i].operator === "-")
+                    totalRoll -= rolledAmount;
+                else {
+                    totalRoll += rolledAmount;
+                }
+            }
+
+            const individualRollsText = rolledDie.length > 1 ? rolledDie.join(" + ") : rolledDie.join("");
+
+            if (i !== 0) {
+                const operatorText = dieExpressions[i].operator === "-" ? "-" : "+"
+                numbersRolled.push(`${operatorText}`)
+            }
+
+            numbersRolled.push(`[ ${individualRollsText} ]`)
         }
 
-        //todo: How to make the text look nice? Maybe we can pass in a 'log array' for registration?
-        const numbersRolledText = numbersRolled.join(" + ");
-
-        botMessage.edit(`Rolled ${totalRoll} \n (${numbersRolledText})`);
+        const numbersRolledText = numbersRolled.join(" ");
+        botMessage.edit(`Rolled ${totalRoll} \n ${numbersRolledText}`);
     }
 }
