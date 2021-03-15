@@ -5,6 +5,7 @@
             "es2018",
             "dom",
             "esnext"
-        ]
+        ],
+        "outDir": "dist",
     }
 }
