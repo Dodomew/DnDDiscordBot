@@ -11,7 +11,11 @@ client.commands = new Discord.Collection();
 const { prefix } = require('../config.json');
 
 // Get all commands
-const commandFiles = fs.readdirSync(__dirname + '/commands/').filter(file => file.endsWith('.ts'));
+const commandFiles = fs.readdirSync(__dirname + '/commands/').filter((file) => {
+    if (file.endsWith('.ts') || file.endsWith('.js')) {
+        return file;
+    }
+});
 
 for (const file of commandFiles) {
     const command = require(__dirname + `/commands/${file}`);
