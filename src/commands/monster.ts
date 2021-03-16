@@ -135,7 +135,9 @@ const monsterEmbedConstructor = (monster: MonsterProps) => {
         for (let i = 0; i < monster.spell_list.length; i++) {
             const spell = monster.spell_list[i];
             const urlParameter = spell.lastIndexOf("/?format=json");
-            const spellLink = spell.substring(0, urlParameter);
+            const APIspellLink = spell.substring(0, urlParameter);
+            const spellLink = APIspellLink.replace("api.", "");
+
 
             const posA = spell.lastIndexOf("spells/");
             const posB = spell.lastIndexOf("/");
