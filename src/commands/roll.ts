@@ -39,7 +39,7 @@ module.exports = {
 
         const dieArgs: string = args.join("");
 
-        const expressions = dieArgs.match(/[+-]?\dd\d+|([+-][\d]+)/g);
+        const expressions = dieArgs.match(/[+-]?\d+d\d+|([+-][\d]+)/g);
 
         if (!expressions || dieArgs.indexOf("d") === -1) {
             return message.reply("No valid dice found.")
