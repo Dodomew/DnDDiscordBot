@@ -191,7 +191,7 @@ const botMessageResponse = (botMessage, state, config?) => {
             }
             break;
         default:
-            botMessage.edit(`Unable to process command`);
+            botMessage.edit(`Unable to process command. Type **!help** to see all commands.`);
             break;
     }
 }

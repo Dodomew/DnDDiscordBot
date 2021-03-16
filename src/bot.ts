@@ -35,7 +35,7 @@ client.on('message', message => {
     const command = args.shift().toLowerCase();
 
     if (!client.commands.has(command)) {
-        message.reply('Command not recognized');
+        message.reply('Command not recognized! Type **!help** to see all commands.');
         return;
     }
 

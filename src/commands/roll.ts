@@ -34,7 +34,7 @@ module.exports = {
     description: 'Roll a die',
     async execute(message, args) {
         if (!args.length) {
-            return message.reply("You did not specify a die.")
+            return message.reply("You did not specify a die. Type **!help** to see how to use the **!roll** command.")
         }
 
         const dieArgs: string = args.join("");
