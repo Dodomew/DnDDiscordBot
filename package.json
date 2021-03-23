@@ -1,6 +1,6 @@
 {
   "name": "dnddiscordbot",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A Discord bot to fetch DnD info through commands",
   "main": "bot.js",
   "scripts": {
